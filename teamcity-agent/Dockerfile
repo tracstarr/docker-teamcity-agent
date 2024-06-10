@@ -1,21 +1,13 @@
-#ARG DOTNET_SDK_VERSION31_TAG=3.1-focal
-#ARG DOTNET_SDK_VERSION5_TAG=5.0-focal
-ARG DOTNET_SDK_VERSION6_TAG=6.0-focal
-ARG DOTNET_SDK_VERSION7_TAG=7.0-jammy
 ARG DOTNET_SDK_VERSION8_TAG=8.0-jammy
 ARG DOTNET_SDK_VERSION9_TAG=9.0-preview-noble
 ARG MINVER_IMAGE_TAG=latest
 ARG MINVER_IMAGE=teslaconsulting/minver-cli:$MINVER_IMAGE_TAG
 ARG DOCKER_CLI_IMAGE=docker:cli
 ARG TEAMCITYAGENT_IMAGE_REPOS=jetbrains/teamcity-agent
-ARG TEAMCITYAGENT_IMAGE_TAG=2022.04.7-linux
+ARG TEAMCITYAGENT_IMAGE_TAG=2023.05.6-linux-sudo
 
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_SDK_VERSION9_TAG} AS dotnetsdk9
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_SDK_VERSION8_TAG} AS dotnetsdk8
-FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_SDK_VERSION7_TAG} AS dotnetsdk7
-FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_SDK_VERSION6_TAG} AS dotnetsdk6
-#FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_SDK_VERSION5_TAG} AS dotnetsdk5
-#FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_SDK_VERSION31_TAG} AS dotnetsdk3
 FROM $MINVER_IMAGE AS minver
 FROM $DOCKER_CLI_IMAGE AS dockercli
 
@@ -23,10 +15,6 @@ FROM scratch AS build
 # make sure folder exist
 WORKDIR /usr/local/bin
 WORKDIR /usr/share
-#COPY --from=dotnetsdk3 /usr/share/dotnet /usr/share/dotnet
-#COPY --from=dotnetsdk5 /usr/share/dotnet /usr/share/dotnet
-COPY --from=dotnetsdk6 /usr/share/dotnet /usr/share/dotnet
-COPY --from=dotnetsdk7 /usr/share/dotnet /usr/share/dotnet
 COPY --from=dotnetsdk8 /usr/share/dotnet /usr/share/dotnet
 COPY --from=dotnetsdk9 /usr/share/dotnet /usr/share/dotnet
 COPY --from=dotnetsdk9 /usr/share/powershell /usr/share/powershell
@@ -37,21 +25,6 @@ FROM ${TEAMCITYAGENT_IMAGE_REPOS}:${TEAMCITYAGENT_IMAGE_TAG} AS final
 
 USER root
 
-#ARG DOTNET_SDK_VERSION31=3.1.0
-#ARG ASPNET_VERSION31=3.1.0
-#ARG DOTNET_VERSION31=3.1.0
-
-#ARG DOTNET_SDK_VERSION5=5.0.0
-#ARG ASPNET_VERSION5=5.0.0
-#ARG DOTNET_VERSION5=5.0.0
-
-ARG DOTNET_SDK_VERSION6=6.0.0
-ARG ASPNET_VERSION6=6.0.0
-ARG DOTNET_VERSION6=6.0.0
-
-ARG DOTNET_SDK_VERSION7=7.0.0
-ARG ASPNET_VERSION7=7.0.0
-ARG DOTNET_VERSION7=7.0.0
 
 ARG DOTNET_SDK_VERSION8=8.0.0
 ARG ASPNET_VERSION8=8.0.0
@@ -64,25 +37,8 @@ ARG DOTNET_VERSION9=9.0.0
 ARG POWERSHELL_VERSION=7.4.1
 ARG MINVER_VERSION=4.3.0
 ARG DOCKER_COMPOSE_VERSION=2.24.6
-# Install PowerShell global tool
-# Install minver Console global tool
-#ENV DOTNET_SDK_VERSION31=${DOTNET_SDK_VERSION31} \
-#  ASPNET_VERSION31=${ASPNET_VERSION31} \
-#  DOTNET_VERSION31=${DOTNET_VERSION31} \
-#  \
-#  DOTNET_SDK_VERSION5=${DOTNET_SDK_VERSION5} \
-#  ASPNET_VERSION5=${ASPNET_VERSION5} \
-#  DOTNET_VERSION5=${DOTNET_VERSION5} \
-#  \
-ENV DOTNET_SDK_VERSION6=${DOTNET_SDK_VERSION6} \
-  ASPNET_VERSION6=${ASPNET_VERSION6} \
-  DOTNET_VERSION6=${DOTNET_VERSION6} \
-  \
-  DOTNET_SDK_VERSION7=${DOTNET_SDK_VERSION7} \
-  ASPNET_VERSION7=${ASPNET_VERSION7} \
-  DOTNET_VERSION7=${DOTNET_VERSION7} \
-  \
-  DOTNET_SDK_VERSION8=${DOTNET_SDK_VERSION8} \
+
+ENV DOTNET_SDK_VERSION8=${DOTNET_SDK_VERSION8} \
   ASPNET_VERSION8=${ASPNET_VERSION8} \
   DOTNET_VERSION8=${DOTNET_VERSION8} \
   \
@@ -101,25 +57,6 @@ ENV DOTNET_SDK_VERSION6=${DOTNET_SDK_VERSION6} \
 
 COPY --from=build /usr /usr
 
-# RUN  curl -s https://package.perforce.com/perforce.pubkey | gpg --dearmor | tee /usr/share/keyrings/perforce.gpg \
-#   && echo 'deb [signed-by=/usr/share/keyrings/perforce.gpg] https://package.perforce.com/apt/ubuntu focal release' > /etc/apt/sources.list.d/perforce.list \
-#   && apt-get update \
-#   && apt-get upgrade -y \
-#   && ln -s /usr/share/powershell/pwsh /usr/bin/pwsh \
-#   && chmod 755 /usr/share/powershell/pwsh \
-#   && ln -s /usr/share/minver-cli/minver /usr/bin/minver \
-#   && chmod +x /usr/share/minver-cli/minver \
-#   && rm /usr/local/bin/docker-compose \
-#   && ln -s /usr/local/libexec/docker/cli-plugins/docker-compose /usr/local/bin/docker-compose \
-#   && chmod +x /usr/libexec/docker/cli-plugins/docker-* \
-#   # Install module Pester - for root user
-#   && pwsh -Command "Install-Module -Name Pester -Scope AllUsers -Force" \
-#   && dotnet --help \
-#   && dotnet --info \
-#   && dotnet nuget locals all --clear \
-#   && apt-get clean \
-#   && rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
-
 RUN  ln -s /usr/share/powershell/pwsh /usr/bin/pwsh \
   && chmod 755 /usr/share/powershell/pwsh \
   && ln -s /usr/share/minver-cli/minver /usr/bin/minver \
@@ -134,6 +71,3 @@ RUN  ln -s /usr/share/powershell/pwsh /usr/bin/pwsh \
   && dotnet nuget locals all --clear
 
 USER buildagent
-
-# ENV  PATH="$PATH:/home/buildagent/.dotnet/tools"
-# RUN dotnet tool install --global minver-cli --version $DOTNET_MINVER_VERSION
