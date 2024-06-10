@@ -17,9 +17,7 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     env:
       IS_SEMVER_TAG: ${{ false }}
-      IS_TAG: ${{ null }}
-      DOTNET_SDK_VERSION6_TAG: 6.0-focal
-      DOTNET_SDK_VERSION7_TAG: 7.0-jammy
+      IS_TAG: ${{ null }}      
       DOTNET_SDK_VERSION8_TAG: 8.0-jammy
       DOTNET_SDK_VERSION9_TAG: 9.0-preview-noble
     steps:
@@ -46,6 +44,17 @@ jobs:
           docker rmi $(docker image ls -aq)
           df -h     
 
+      - name: repository name fix and env
+        run: |
+          echo "image_repository_name=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "TAG_NAME=latest" >> $GITHUB_ENV
+          if [ "${{ github.event.release.tag_name }}" != "" ]; then
+            echo "TAG_NAME=${{ github.event.release.tag_name }}" >> $GITHUB_ENV
+          fi;
+          if [ "${{ github.event.inputs.version }}" != "" ]; then
+            echo "TAG_NAME=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          fi;
+          
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -112,8 +121,7 @@ jobs:
             type=match,enable=true,priority=880,prefix=,suffix=,pattern=^(\d+\.\d+)(\.\d+)?(-.+)?$,group=1
             type=match,enable=false,priority=870,prefix=,suffix=,pattern=^(\d+)\.\d+(\.\d+)?(-.+)?$,group=1
             type=ref,enable=true,priority=600,event=branch
-            type=sha,enable=true,priority=500,prefix=sha-,suffix=,format=short
-          labels: ${{ steps.meta.outputs.labels }}
+            type=sha,enable=true,priority=500,prefix=sha-,suffix=,format=short          
           build-args: |
             MINVER_VERSION=${{ steps.minver_version.outputs.version }}
             DOCKER_COMPOSE_VERSION=${{ steps.docker_compose_version.outputs.version }}
